@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<testcase>
+<info>
+<keywords>
+HTTP
+HTTP GET
+compressed
+Resume
+retry
+</keywords>
+</info>
+
+<reply>
+
+# Premature close after a gzip prefix. The decoded size is not a range.
+<data crlf="headers" nocheck="yes" nonewline="yes">
+HTTP/1.1 200 OK swsbounce swsclose
+Accept-Ranges: bytes
+Content-Encoding: gzip
+Content-Length: 61
+
+%hex[%1f%8b%08%00%2f%48%f6%6a%02%ff%ed%c9%45%01%00%20%00%04%b0%ac%b8%bb%93%9e%20%dc%be%23%94%71%21%95%36%d6%f9%10%53%2e%b5%f5%31%d7%3e%97%60%30]hex%
+</data>
+
+# The retry must be a full GET. A Range here would keep the short file.
+<data1 crlf="headers" nocheck="yes" nonewline="yes">
+HTTP/1.1 200 OK swsclose
+Accept-Ranges: bytes
+Content-Encoding: gzip
+Content-Length: 61
+
+%hex[%1f%8b%08%00%2f%48%f6%6a%02%ff%ed%c9%45%01%00%20%00%04%b0%ac%b8%bb%93%9e%20%dc%be%23%94%71%21%95%36%d6%f9%10%53%2e%b5%f5%31%d7%3e%97%60%30%18%0c%06%83%f9%74%1e%c7%e5%3a%6b%20%08%00%00]hex%
+</data1>
+</reply>
+
+<client>
+<features>
+libz
+</features>
+<server>
+http
+</server>
+<name>
+HTTP retry compressed download does not resume at decoded size
+</name>
+<command option="no-output,no-include">
+--compressed --continue-at - --retry 1 --retry-all-errors --retry-delay 1 -o %LOGDIR/outfile%TESTNUMBER http://%HOSTIP:%HTTPPORT/%TESTNUMBER
+</command>
+</client>
+
+<verify>
+<strippart>
+s/^Accept-Encoding: [a-zA-Z, ]*/Accept-Encoding: xxx/
+</strippart>
+<protocol crlf="headers">
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Accept-Encoding: xxx
+
+GET /%TESTNUMBER HTTP/1.1
+Host: %HOSTIP:%HTTPPORT
+User-Agent: curl/%VERSION
+Accept: */*
+Accept-Encoding: xxx
+
+</protocol>
+<file1 name="%LOGDIR/outfile%TESTNUMBER" nonewline="yes">
+%repeat[80 x abcdefghijklmnopqrstuvwxyz]%
+</file1>
+<errorcode>
+0
+</errorcode>
+</verify>
+</testcase>

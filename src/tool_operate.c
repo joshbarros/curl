@@ -352,7 +352,9 @@ static bool is_outfile_auto_resumable(struct OperationConfig *config,
     (config->httpreq == TOOL_HTTPREQ_UNSPEC ||
      config->httpreq == TOOL_HTTPREQ_GET) &&
     /* CURLE_WRITE_ERROR could mean outs->bytes is not accurate */
-    result != CURLE_WRITE_ERROR && result != CURLE_RANGE_ERROR;
+    result != CURLE_WRITE_ERROR && result != CURLE_RANGE_ERROR &&
+    /* --compressed writes decoded bytes, not a byte-range offset */
+    !config->encoding;
 }
 
 enum retryreason {
